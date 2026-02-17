@@ -1,5 +1,7 @@
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
   name: podinfo-dev
@@ -14,3 +16,7 @@ spec:
     name: flux-system
   timeout: 3m0s
   wait: true
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
