@@ -4,11 +4,15 @@ creation_rules:
   encrypted_regex: ^(data|stringData)$
   # authenticating only the encrypted data allows updating metadata fields without re-encrypting
   mac_only_encrypted: true
-  age: age1zfl57xyrfy9nw4p6gv9kzzz593k8dv9ce3x50h3z3gfmpec6qyhs7seuqu
+  age: age13trtw82hqsmyfqn6s3du406dgh5zu0es6j3xuzgsqsaynq9dxvhsq0ysj9
+
+#json encryption
+- path_regex: \.json$
+  age: age13trtw82hqsmyfqn6s3du406dgh5zu0es6j3xuzgsqsaynq9dxvhsq0ysj9
 
 # Encrypt plain text files ending with .encrypted
 - path_regex: \.encrypted$
-  age: age1zfl57xyrfy9nw4p6gv9kzzz593k8dv9ce3x50h3z3gfmpec6qyhs7seuqu
+  age: age13trtw82hqsmyfqn6s3du406dgh5zu0es6j3xuzgsqsaynq9dxvhsq0ysj9
 
 stores:
   # Configure 2-space indentation for YAML files
