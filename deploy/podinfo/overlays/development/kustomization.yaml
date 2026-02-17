@@ -1,0 +1,36 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: podinfo-dev
+
+resources:
+- ../../base
+- namespace.yaml
+
+images:
+- name: ghcr.io/stefanprodan/podinfo
+  newTag: latest
+
+patches:
+- path: patch-deployment.yaml
+- target:
+    kind: Ingress
+    name: podinfo
+  patch: |
+    - op: add
+      path: /spec/rules/0/host
+      # <sub-domain>.<cluster-name>.dski23a.timebertt.dev
+      value: &host podinfo-dev.group-jsti.dski23a.timebertt.dev
+    - op: add
+      path: /spec/tls/0/hosts
+      value:
+      - *host
+- path: patch-ingress-auth.yaml
+
+secretGenerator:
+- name: basic-auth
+  options:
+    # don't append hash of the file contents to the secret name
+    disableNameSuffixHash: true
+  files:
+  - auth=htpasswd.encrypted

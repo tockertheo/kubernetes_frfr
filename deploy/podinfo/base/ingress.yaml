@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: podinfo
+  annotations:
+    # set this to letsencrypt-staging for testing purposes
+    cert-manager.io/cluster-issuer: letsencrypt
+spec:
+  # Explicitly specify the ingress class to use, in case
+  # the IngressClass nginx is not marked as default.
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: podinfo
+            port:
+              name: http
+  tls:
+  - secretName: podinfo-tls

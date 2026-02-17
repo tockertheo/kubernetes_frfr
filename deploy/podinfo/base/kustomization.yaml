@@ -1,0 +1,38 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - github.com/stefanprodan/podinfo//kustomize
+  - ingress.yaml   #from Lab ingress-nginx
+  - servicemonitor.yaml   # add our ServiceMonitor manifest (from Lab Prometheus Operator)
+  - load-generator.yaml   # add load generator Deployment (from Lab Prometheus Operator)
+
+
+
+labels:
+- pairs:
+    app: podinfo
+
+configMapGenerator:
+- name: podinfo-config
+  literals:
+  - PODINFO_UI_MESSAGE=Hello, Platform Engineering!
+
+
+
+patches:
+- path: patch-deployment.yaml
+# extend the Service ports list (from Lab Prometheus Operator)
+- target:
+    kind: Service
+    name: podinfo
+  patch: |-
+    - op: add
+      path: /spec/ports/-
+      value: 
+        # in the remote base manifests, the http-metrics port is only defined in the Deployment but not in the Service
+        # add the http-metrics port to be scraped by Prometheus (via ServiceMonitor)
+        name: http-metrics
+        port: 9797
+        protocol: TCP
+        targetPort: http-metrics
