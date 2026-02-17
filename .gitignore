@@ -2,3 +2,4 @@ kubeconfig-group-jsti.yaml
 ssh-private-key-group-jsti
 *.agekey
 startup.sh
+key.json
