@@ -65,10 +65,13 @@ spec:
       enabled: true
       ingressClassName: nginx
       annotations:
-        cert-manager.io/cluster-issuer: "letsencrypt"
+        cert-manager.io/cluster-issuer: letsencrypt
         nginx.ingress.kubernetes.io/ssl-redirect: "true"
-      hostname: minio.group-jsti.dski23a.timebertt.dev
-      extraTls:
+      hosts:
+        - name: minio.group-jsti.dski23a.timebertt.dev
+          path: /
+          pathType: Prefix
+      tls:
         - secretName: minio-tls-cert
           hosts:
             - minio.group-jsti.dski23a.timebertt.dev
@@ -77,10 +80,13 @@ spec:
       enabled: true
       ingressClassName: nginx
       annotations:
-        cert-manager.io/cluster-issuer: "letsencrypt"
+        cert-manager.io/cluster-issuer: letsencrypt
         nginx.ingress.kubernetes.io/ssl-redirect: "true"
-      hostname: console-minio.group-jsti.dski23a.timebertt.dev
-      extraTls:
+      hosts:
+        - name: console-minio.group-jsti.dski23a.timebertt.dev
+          path: /
+          pathType: Prefix
+      tls:
         - secretName: console-minio-tls-cert
           hosts:
             - console-minio.group-jsti.dski23a.timebertt.dev
