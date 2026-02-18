@@ -24,6 +24,13 @@ spec:
   values:
     mode: standalone
 
+    image:
+          tag: "2025.7.23-debian-12"
+
+    console:
+      image:
+        tag: "2.0.2-debian-12"
+        
     auth:
       existingSecret: minio
       rootUserSecretKey: rootUser
