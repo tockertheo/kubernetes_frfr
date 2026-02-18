@@ -22,44 +22,21 @@ spec:
     cleanupOnFail: true
 
   values:
-    mode: standalone
-
-    # --- Images: auf GHCR umstellen (global + konkret) ---
     global:
       imageRegistry: ghcr.io
       security:
         allowInsecureImages: true
+
     image:
       registry: ghcr.io
       repository: bitnami/minio
-      # nimm erstmal wieder r3, weil Bitnami häufig so taggt
-      tag: "2025.7.23-debian-12-r3"
+      tag: 2025.7.23-debian-12-r3
 
     console:
       image:
         registry: ghcr.io
         repository: bitnami/minio-object-browser
-        tag: "2.0.2-debian-12-r3"
-
-    auth:
-      existingSecret: minio
-      rootUserSecretKey: rootUser
-      rootPasswordSecretKey: rootPassword
-
-    persistence:
-      enabled: true
-      storageClass: local-path
-      size: 10Gi
-      accessModes:
-        - ReadWriteOnce
-
-    resources:
-      requests:
-        cpu: 100m
-        memory: 256Mi
-      limits:
-        cpu: 500m
-        memory: 512Mi
+        tag: 2.0.2-debian-12-r3
 
     ingress:
       enabled: true
