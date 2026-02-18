@@ -27,7 +27,8 @@ spec:
     # --- Images: auf GHCR umstellen (global + konkret) ---
     global:
       imageRegistry: ghcr.io
-
+      security:
+        allowInsecureImages: true
     image:
       registry: ghcr.io
       repository: bitnami/minio
