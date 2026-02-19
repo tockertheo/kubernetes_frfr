@@ -34,7 +34,8 @@ spec:
         host: mlflow-postgres-rw.data-storage.svc.cluster.local
         port: 5432
         database: mlflowdb
-        user: mlflow
+        user: ""
+        password: ""
 
     artifactRoot:
       s3:
