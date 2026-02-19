@@ -22,21 +22,6 @@ spec:
     cleanupOnFail: true
 
   values:
-    global:
-      imageRegistry: ghcr.io
-      security:
-        allowInsecureImages: true
-
-    image:
-      registry: ghcr.io
-      repository: bitnami/minio
-      tag: 2025.7.23-debian-12-r3
-
-    console:
-      image:
-        registry: ghcr.io
-        repository: bitnami/minio-object-browser
-        tag: 2.0.2-debian-12-r3
 
     ingress:
       enabled: true
