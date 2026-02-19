@@ -57,3 +57,4 @@ spec:
         - secretName: minio-tls-cert
           hosts:
             - minio.group-jsti.dski23a.timebertt.dev
+            
