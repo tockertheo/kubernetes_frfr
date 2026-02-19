@@ -1,0 +1,17 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: mlflow-postgres
+  namespace: data-storage
+spec:
+  instances: 1
+  storage:
+    size: 10Gi
+    storageClass: local-path
+
+  bootstrap:
+    initdb:
+      database: mlflowdb
+      owner: mlflow
+      secret:
+        name: mlflow-postgres-auth
