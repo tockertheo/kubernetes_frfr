@@ -13,3 +13,7 @@ spec:
   targetNamespace: mlflow
   wait: true
   timeout: 10m
+  decryption:
+      provider: sops
+      secretRef: 
+        name: sops-age
