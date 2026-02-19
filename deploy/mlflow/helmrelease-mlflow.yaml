@@ -28,7 +28,9 @@ spec:
         port: 5432
         database: mlflowdb
         user: mlflow
-        password: DB_PASSWORD   # -> gleich unten erklären
+        existingSecret:
+          name: mlflow-postgres-credentials
+          key: DB_PASSWORD
 
     artifactRoot:
       s3:
