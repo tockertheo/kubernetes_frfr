@@ -5,6 +5,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 15m
+  releaseName: minio
   targetNamespace: data-storage
 
   chart:
@@ -12,9 +13,11 @@ spec:
       chart: minio
       sourceRef:
         kind: HelmRepository
-        name: bitnami-oci
+        name: minio
         namespace: flux-system
       interval: 1h
+      # optional: version pinnen, wenn ihr wollt
+      # version: "5.4.0"
 
   install:
     createNamespace: true
@@ -22,33 +25,34 @@ spec:
     cleanupOnFail: true
 
   values:
+    existingSecret: minio-auth
+    replicas: 1
+
+    persistence:
+      enabled: true
+      storageClass: local-path
+      size: 10Gi
+
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
 
     ingress:
       enabled: true
       ingressClassName: nginx
       annotations:
-        cert-manager.io/cluster-issuer: letsencrypt
+        cert-manager.io/cluster-issuer: "letsencrypt"
         nginx.ingress.kubernetes.io/ssl-redirect: "true"
+        nginx.ingress.kubernetes.io/proxy-body-size: "0"
+        nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+      path: /
       hosts:
-        - name: minio.group-jsti.dski23a.timebertt.dev
-          path: /
-          pathType: Prefix
+        - minio.group-jsti.dski23a.timebertt.dev
       tls:
         - secretName: minio-tls-cert
           hosts:
             - minio.group-jsti.dski23a.timebertt.dev
-
-    consoleIngress:
-      enabled: true
-      ingressClassName: nginx
-      annotations:
-        cert-manager.io/cluster-issuer: letsencrypt
-        nginx.ingress.kubernetes.io/ssl-redirect: "true"
-      hosts:
-        - name: console-minio.group-jsti.dski23a.timebertt.dev
-          path: /
-          pathType: Prefix
-      tls:
-        - secretName: console-minio-tls-cert
-          hosts:
-            - console-minio.group-jsti.dski23a.timebertt.dev
