@@ -52,8 +52,4 @@ spec:
     service:
       type: ClusterIP
       port: 80
-    
-
-    extraArgs:
-      allowed-hosts: mlflow.group-jsti.dski23a.timebertt.dev
 
