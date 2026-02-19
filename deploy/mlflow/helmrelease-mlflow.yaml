@@ -34,8 +34,6 @@ spec:
         host: mlflow-postgres-rw.data-storage.svc.cluster.local
         port: 5432
         database: mlflowdb
-        user: ""
-        password: ""
 
     artifactRoot:
       s3:
@@ -57,4 +55,5 @@ spec:
     
 
     extraArgs:
-    - --allowed-hosts=mlflow.group-jsti.dski23a.timebertt.dev
+      allowed-hosts: mlflow.group-jsti.dski23a.timebertt.dev
+
