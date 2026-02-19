@@ -28,9 +28,6 @@ spec:
         port: 5432
         database: mlflowdb
         user: mlflow
-        existingSecret:
-          name: mlflow-postgres-credentials
-          key: DB_PASSWORD
 
     artifactRoot:
       s3:
@@ -40,12 +37,19 @@ spec:
           name: mlflow-s3
           keyOfAccessKeyId: AWS_ACCESS_KEY_ID
           keyOfSecretAccessKey: AWS_SECRET_ACCESS_KEY
-
+            
     extraEnvVars:
-      MLFLOW_S3_ENDPOINT_URL: "http://minio.data-storage.svc.cluster.local:9000"
-      MLFLOW_S3_IGNORE_TLS: "true"
-      # optional (hilft manchmal bei MinIO):
-      AWS_DEFAULT_REGION: "us-east-1"
+      - name: MLFLOW_S3_ENDPOINT_URL
+        value: "http://minio.data-storage.svc.cluster.local:9000"
+      - name: MLFLOW_S3_IGNORE_TLS
+        value: "true"
+      - name: AWS_DEFAULT_REGION
+        value: "us-east-1"
+      - name: PGPASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: mlflow-postgres-credentials
+            key: DB_PASSWORD
 
     service:
       type: ClusterIP
