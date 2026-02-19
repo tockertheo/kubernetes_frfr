@@ -30,7 +30,7 @@ spec:
 
 
       postgres:
-        enabled: true
+        enabled: false
         host: mlflow-postgres-rw.data-storage.svc.cluster.local
         port: 5432
         database: mlflowdb
