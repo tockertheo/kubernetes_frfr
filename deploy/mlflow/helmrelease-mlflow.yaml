@@ -20,8 +20,8 @@ spec:
     replicaCount: 1
 
     backendStore:
-      databaseMigration: true
-      databaseConnectionCheck: true
+      databaseMigration: false
+      databaseConnectionCheck: false
 
       existingDatabaseSecret:
         name: mlflow-postgres-credentials
