@@ -7,3 +7,5 @@ resources:
   - ingress-mlflow.yaml
   - secret-mlflow.encrypted.yaml
   - secret-postgres.encrypted.yaml
+  - cm-mlflow-dbchecker.yaml
+  - cm-mlflow-migrations.yaml
