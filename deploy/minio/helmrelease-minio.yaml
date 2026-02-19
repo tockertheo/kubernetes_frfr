@@ -26,6 +26,7 @@ spec:
 
   values:
     existingSecret: minio-auth
+    mode: standalone
     replicas: 1
 
     persistence:
