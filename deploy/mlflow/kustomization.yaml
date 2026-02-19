@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - helmrepo-mlflow.yaml
+  - helmrelease-mlflow.yaml
+  - ingress-mlflow.yaml
+  - secret-mlflow.encrypted.yaml
+  - secret-postgres.encrypted.yaml

@@ -1,0 +1,50 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: mlflow
+  namespace: flux-system
+spec:
+  interval: 10m
+  releaseName: mlflow
+  targetNamespace: mlflow
+  install:
+    createNamespace: true
+  chart:
+    spec:
+      chart: mlflow
+      sourceRef:
+        kind: HelmRepository
+        name: community-charts
+      interval: 1h
+  values:
+    replicaCount: 1
+
+    backendStore:
+      databaseMigration: true
+      databaseConnectionCheck: true
+      postgres:
+        enabled: true
+        host: mlflow-postgres-rw.data-storage.svc.cluster.local
+        port: 5432
+        database: mlflowdb
+        user: mlflow
+        password: DB_PASSWORD   # -> gleich unten erklären
+
+    artifactRoot:
+      s3:
+        enabled: true
+        bucket: mlflow-artifacts
+        existingSecret:
+          name: mlflow-s3
+          keyOfAccessKeyId: AWS_ACCESS_KEY_ID
+          keyOfSecretAccessKey: AWS_SECRET_ACCESS_KEY
+
+    extraEnvVars:
+      MLFLOW_S3_ENDPOINT_URL: "http://minio.data-storage.svc.cluster.local:9000"
+      MLFLOW_S3_IGNORE_TLS: "true"
+      # optional (hilft manchmal bei MinIO):
+      AWS_DEFAULT_REGION: "us-east-1"
+
+    service:
+      type: ClusterIP
+      port: 80
