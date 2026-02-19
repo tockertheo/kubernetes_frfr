@@ -22,6 +22,13 @@ spec:
     backendStore:
       databaseMigration: true
       databaseConnectionCheck: true
+
+      existingDatabaseSecret:
+        name: mlflow-postgres-credentials
+        usernameKey: username
+        passwordKey: password
+
+
       postgres:
         enabled: true
         host: mlflow-postgres-rw.data-storage.svc.cluster.local
@@ -39,17 +46,9 @@ spec:
           keyOfSecretAccessKey: AWS_SECRET_ACCESS_KEY
             
     extraEnvVars:
-      - name: MLFLOW_S3_ENDPOINT_URL
-        value: "http://minio.data-storage.svc.cluster.local:9000"
-      - name: MLFLOW_S3_IGNORE_TLS
-        value: "true"
-      - name: AWS_DEFAULT_REGION
-        value: "us-east-1"
-      - name: PGPASSWORD
-        valueFrom:
-          secretKeyRef:
-            name: mlflow-postgres-credentials
-            key: DB_PASSWORD
+      MLFLOW_S3_ENDPOINT_URL: "http://minio.data-storage.svc.cluster.local:9000"
+      MLFLOW_S3_IGNORE_TLS: "true"
+      AWS_DEFAULT_REGION: "us-east-1"
 
     service:
       type: ClusterIP
