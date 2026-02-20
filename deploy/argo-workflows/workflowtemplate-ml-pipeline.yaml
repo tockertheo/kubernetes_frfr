@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: ml-pipeline
+  namespace: argo-workflows
+spec:
+  entrypoint: pipeline
+  arguments:
+    parameters:
+      - name: bucket
+      - name: objectKey
+
+  templates:
+    - name: pipeline
+      steps:
+        - - name: run
+            template: run-step
+
+    - name: run-step
+      container:
+        image: ghcr.io/<EUER_IMAGE>:<TAG>
+        command: ["python"]
+        args:
+          - train.py
+          - --bucket
+          - "{{workflow.parameters.bucket}}"
+          - --key
+          - "{{workflow.parameters.objectKey}}"
+        envFrom:
+          - secretRef:
+              name: mlflow-s3
+          - secretRef:
+              name: mlflow-runtime

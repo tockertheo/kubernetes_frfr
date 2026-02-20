@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - helmrepo-argo.yaml
+  - helmrelease-argo-workflows.yaml
+  - ingress-argo-workflows.yaml
+  - cm-workflow-controller-configmap.yaml
+  - secret-argo-artifacts-s3.encrypted.yaml
+  - rbac-workflows.yaml
+
+  # neu:
+  - secret-mlflow-runtime.yaml
+  - workflowtemplate-ml-pipeline.yaml
