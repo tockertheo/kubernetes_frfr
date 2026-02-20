@@ -4,24 +4,24 @@ metadata:
   name: minio-input-data
   namespace: argo-events
 spec:
-  service:
-    ports:
-      - port: 12000
-        targetPort: 12000
-
-  s3:
+  eventBusName: default
+  minio:
     inputDataCsv:
-      bucket: input-data
-      # dein MinIO Service DNS
       endpoint: minio.data-storage.svc.cluster.local:9000
-      insecure: true
+      bucket:
+        name: input-data
       events:
         - s3:ObjectCreated:*
       filter:
-        suffix: ".csv"
+        suffix: .csv
+      insecure: true
       accessKey:
         name: argo-events-minio
         key: accessKey
       secretKey:
         name: argo-events-minio
         key: secretKey
+  service:
+    ports:
+      - port: 12000
+        targetPort: 12000
