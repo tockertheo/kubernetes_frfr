@@ -1,0 +1,65 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: jupyterhub
+  namespace: flux-system
+spec:
+  interval: 10m
+  releaseName: jupyterhub
+  targetNamespace: jupyter
+  install:
+    createNamespace: true
+
+  chart:
+    spec:
+      chart: jupyterhub
+      version: 4.3.2
+      sourceRef:
+        kind: HelmRepository
+        name: jupyterhub
+      interval: 1h
+
+  values:
+    hub:
+      extraEnv:
+        DUMMY_PASSWORD:
+          valueFrom:
+            secretKeyRef:
+              name: jupyterhub-auth
+              key: dummy-password
+
+      extraConfig:
+        00-auth.py: |
+          import os
+          c.JupyterHub.authenticator_class = "dummy"
+          c.DummyAuthenticator.password = os.environ.get("DUMMY_PASSWORD", "changeme")
+
+      # optional: set admins
+      config:
+        Authenticator:
+          admin_users:
+            - admin
+
+    proxy:
+      # Wir terminieren TLS am Ingress, nicht im Hub selbst
+      https:
+        enabled: false
+
+    singleuser:
+      defaultUrl: "/lab"
+      image:
+        name: quay.io/jupyterhub/singleuser
+        tag: "5.4.3"
+
+      storage:
+        type: dynamic
+        capacity: 10Gi
+        dynamic:
+          storageClass: local-path
+
+      cpu:
+        guarantee: 0.2
+        limit: 1
+      memory:
+        guarantee: 512Mi
+        limit: 2Gi
