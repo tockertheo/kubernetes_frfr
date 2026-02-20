@@ -40,10 +40,20 @@ spec:
           admin_users:
             - admin
 
+      db:
+        type: sqlite-pvc
+        pvc:
+          storageClassName: local-path
+          accessModes:
+            - ReadWriteOnce
+          storage: 1Gi
+
     proxy:
       # Wir terminieren TLS am Ingress, nicht im Hub selbst
       https:
         enabled: false
+      service:
+        type: ClusterIP
 
     singleuser:
       defaultUrl: "/lab"
