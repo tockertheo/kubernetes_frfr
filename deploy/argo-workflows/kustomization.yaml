@@ -8,7 +8,3 @@ resources:
   - cm-workflow-controller-configmap.yaml
   - secret-argo-artifacts-s3.encrypted.yaml
   - rbac-workflows.yaml
-
-  # neu:
-  - mlflow-runtime.yaml
-  - workflowtemplate-ml-pipeline.yaml
