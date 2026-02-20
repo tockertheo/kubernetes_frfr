@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: EventSource
+metadata:
+  name: minio-input-data
+  namespace: argo-events
+spec:
+  service:
+    ports:
+      - port: 12000
+        targetPort: 12000
+
+  s3:
+    inputDataCsv:
+      bucket: input-data
+      # dein MinIO Service DNS
+      endpoint: minio.data-storage.svc.cluster.local:9000
+      insecure: true
+      events:
+        - s3:ObjectCreated:*
+      filter:
+        suffix: ".csv"
+      accessKey:
+        name: argo-events-minio
+        key: accessKey
+      secretKey:
+        name: argo-events-minio
+        key: secretKey

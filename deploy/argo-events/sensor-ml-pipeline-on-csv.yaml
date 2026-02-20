@@ -1,0 +1,43 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: ml-pipeline-on-csv
+  namespace: argo-events
+spec:
+  template:
+    serviceAccountName: argo-events-sa
+
+  dependencies:
+    - name: csv-upload
+      eventSourceName: minio-input-data
+      eventName: inputDataCsv
+
+  triggers:
+    - template:
+        name: trigger-ml-pipeline
+        k8s:
+          group: argoproj.io
+          version: v1alpha1
+          resource: workflows
+          operation: create
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: ml-pipeline-
+                namespace: argo-workflows
+              spec:
+                workflowTemplateRef:
+                  name: ml-pipeline
+                arguments:
+                  parameters:
+                    - name: bucket
+                      value: input-data
+                    - name: objectKey
+                      value: "dummy.csv"
+          parameters:
+            - src:
+                dependencyName: csv-upload
+                dataKey: notification.0.s3.object.key
+              dest: spec.arguments.parameters.1.value
