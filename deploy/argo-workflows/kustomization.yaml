@@ -10,5 +10,5 @@ resources:
   - rbac-workflows.yaml
 
   # neu:
-  - secret-mlflow-runtime.yaml
+  - mlflow-runtime.yaml
   - workflowtemplate-ml-pipeline.yaml
