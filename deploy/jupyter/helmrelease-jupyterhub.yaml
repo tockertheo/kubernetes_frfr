@@ -71,5 +71,5 @@ spec:
         guarantee: 0.2
         limit: 1
       memory:
-        guarantee: 512Mi
-        limit: 2Gi
+        guarantee: 512M
+        limit: 2G
