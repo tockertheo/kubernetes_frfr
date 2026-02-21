@@ -95,7 +95,7 @@ spec:
             PY
         envFrom:
           - secretRef:
-              name: minio-auth
+              name: argo-artifacts-s3
         env:
           - name: BUCKET
             value: "{{workflow.parameters.bucket}}"
@@ -125,7 +125,7 @@ spec:
               --out-dir "{{workflow.parameters.eda-out-dir}}"
         envFrom:
           - secretRef:
-              name: minio-auth
+              name: argo-artifacts-s3
       outputs:
         artifacts:
           - name: eda_out
@@ -150,7 +150,7 @@ spec:
               --out-dir "{{workflow.parameters.preprocess-out-dir}}"
         envFrom:
           - secretRef:
-              name: minio-auth
+              name: argo-artifacts-s3
       outputs:
         artifacts:
           - name: preprocess_out
@@ -173,7 +173,7 @@ spec:
               --experiment "{{workflow.parameters.mlflow-experiment}}"
         envFrom:
           - secretRef:
-              name: minio-auth
+              name: argo-artifacts-s3
       outputs:
         artifacts:
           - name: model_out
@@ -201,7 +201,7 @@ spec:
               --run-name "evaluation"
         envFrom:
           - secretRef:
-              name: minio-auth
+              name: argo-artifacts-s3
       outputs:
         artifacts:
           - name: eval_out
