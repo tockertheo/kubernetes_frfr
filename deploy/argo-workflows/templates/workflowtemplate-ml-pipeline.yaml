@@ -5,29 +5,179 @@ metadata:
   namespace: argo-workflows
 spec:
   entrypoint: pipeline
+  serviceAccountName: argo-workflow
+
   arguments:
     parameters:
       - name: bucket
+        value: input-data
       - name: objectKey
+        value: dummy.csv
+
+      # Inside container
+      - name: local-data-path
+        value: /app/data/input.csv
+
+      - name: eda-out-dir
+        value: /app/artifacts/eda
+      - name: preprocess-out-dir
+        value: /app/artifacts/preprocess
+      - name: model-out-dir
+        value: /app/artifacts/model
+      - name: eval-out-dir
+        value: /app/artifacts/eval
+
+      - name: test-size
+        value: "0.2"
+      - name: random-state
+        value: "42"
+
+      - name: mlflow-experiment
+        value: wine-quality
+      - name: train-run-name
+        value: baseline
+
+      # CHANGE THIS to your image
+      - name: image
+        value: ghcr.io/jbderleuchtturm/ml-wine-pipeline:0.1
 
   templates:
     - name: pipeline
       steps:
-        - - name: run
-            template: run-step
+        - - name: eda
+            template: eda-step
+        - - name: preprocess
+            template: preprocess-step
+        - - name: train
+            template: train-step
+        - - name: evaluate
+            template: eval-step
 
-    - name: run-step
+    # -------------------------
+    # EDA
+    # -------------------------
+    - name: eda-step
+      inputs:
+        artifacts:
+          - name: dataset
+            path: /app/data/input.csv
+            s3:
+              endpoint: minio.data-storage.svc.cluster.local:9000
+              bucket: "{{workflow.parameters.bucket}}"
+              key: "{{workflow.parameters.objectKey}}"
+              insecure: true
+              accessKeySecret:
+                name: argo-artifacts-s3
+                key: accesskey
+              secretKeySecret:
+                name: argo-artifacts-s3
+                key: secretkey
       container:
-        image: ghcr.io/<EUER_IMAGE>:<TAG>
-        command: ["python"]
+        image: "{{workflow.parameters.image}}"
+        command: ["bash", "-lc"]
         args:
-          - train.py
-          - --bucket
-          - "{{workflow.parameters.bucket}}"
-          - --key
-          - "{{workflow.parameters.objectKey}}"
-        envFrom:
-          - secretRef:
-              name: mlflow-s3
-          - secretRef:
-              name: mlflow-runtime
+          - |
+            set -euo pipefail
+            python exploratory_data_analysis.py \
+              --data-path "{{workflow.parameters.local-data-path}}" \
+              --out-dir "{{workflow.parameters.eda-out-dir}}"
+      envFrom:
+        - secretRef:
+            name: argo-artifacts-s3
+      outputs:
+        artifacts:
+          - name: eda_out
+            path: "{{workflow.parameters.eda-out-dir}}"
+
+    # -------------------------
+    # PREPROCESS
+    # -------------------------
+    - name: preprocess-step
+      inputs:
+        artifacts:
+          - name: dataset
+            path: /app/data/input.csv
+            s3:
+              endpoint: minio.data-storage.svc.cluster.local:9000
+              bucket: "{{workflow.parameters.bucket}}"
+              key: "{{workflow.parameters.objectKey}}"
+              insecure: true
+              accessKeySecret:
+                name: argo-artifacts-s3
+                key: accesskey
+              secretKeySecret:
+                name: argo-artifacts-s3
+                key: secretkey
+      container:
+        image: "{{workflow.parameters.image}}"
+        command: ["bash", "-lc"]
+        args:
+          - |
+            set -euo pipefail
+            python preprocessing.py \
+              --data-path "{{workflow.parameters.local-data-path}}" \
+              --out-dir "{{workflow.parameters.preprocess-out-dir}}" \
+              --test-size "{{workflow.parameters.test-size}}" \
+              --random-state "{{workflow.parameters.random-state}}"
+      envFrom:
+        - secretRef:
+            name: argo-artifacts-s3
+      outputs:
+        artifacts:
+          - name: preprocess_out
+            path: "{{workflow.parameters.preprocess-out-dir}}"
+
+    # -------------------------
+    # TRAIN
+    # -------------------------
+    - name: train-step
+      inputs:
+        artifacts:
+          - name: preprocess_out
+            path: /app/artifacts/preprocess
+      container:
+        image: "{{workflow.parameters.image}}"
+        command: ["bash", "-lc"]
+        args:
+          - |
+            set -euo pipefail
+            python train.py \
+              --preprocess-dir "{{workflow.parameters.preprocess-out-dir}}" \
+              --out-dir "{{workflow.parameters.model-out-dir}}" \
+              --experiment "{{workflow.parameters.mlflow-experiment}}" \
+              --run-name "{{workflow.parameters.train-run-name}}"
+      envFrom:
+        - secretRef:
+            name: argo-artifacts-s3
+      outputs:
+        artifacts:
+          - name: model_out
+            path: "{{workflow.parameters.model-out-dir}}"
+
+    # -------------------------
+    # EVALUATE
+    # -------------------------
+    - name: eval-step
+      inputs:
+        artifacts:
+          - name: preprocess_out
+            path: /app/artifacts/preprocess
+          - name: model_out
+            path: /app/artifacts/model
+      container:
+        image: "{{workflow.parameters.image}}"
+        command: ["bash", "-lc"]
+        args:
+          - |
+            set -euo pipefail
+            python evaluation.py \
+              --preprocess-dir "{{workflow.parameters.preprocess-out-dir}}" \
+              --model-path "{{workflow.parameters.model-out-dir}}/model.joblib" \
+              --out-dir "{{workflow.parameters.eval-out-dir}}"
+      envFrom:
+        - secretRef:
+            name: argo-artifacts-s3
+      outputs:
+        artifacts:
+          - name: eval_out
+            path: "{{workflow.parameters.eval-out-dir}}"
