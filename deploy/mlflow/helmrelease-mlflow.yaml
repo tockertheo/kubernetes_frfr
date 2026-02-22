@@ -49,10 +49,6 @@ spec:
       MLFLOW_S3_IGNORE_TLS: "true"
       AWS_DEFAULT_REGION: "us-east-1"
 
-    extraArgs:
-      - "--allowed-hosts"
-      - "mlflow.mlflow.svc.cluster.local:80,mlflow.mlflow.svc.cluster.local,mlflow.group-jsti.dski23a.timebertt.dev,localhost:*"
-
     service:
       type: ClusterIP
       port: 80
