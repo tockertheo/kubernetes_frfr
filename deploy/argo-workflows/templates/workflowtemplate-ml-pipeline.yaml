@@ -5,29 +5,204 @@ metadata:
   namespace: argo-workflows
 spec:
   entrypoint: pipeline
+  serviceAccountName: argo-workflow
+
   arguments:
     parameters:
       - name: bucket
       - name: objectKey
+      - name: csv-sep
+        value: ";"
+
+      # inside-container paths
+      - name: local-data-path
+        value: /tmp/data/input.csv
+      - name: eda-out-dir
+        value: /app/artifacts/eda
+      - name: state-dir
+        value: /app/artifacts/state
+      - name: preprocess-out-dir
+        value: /app/artifacts/preprocess
+      - name: model-out-dir
+        value: /app/artifacts/model
+      - name: eval-out-dir
+        value: /app/artifacts/eval
+
+      # MLflow
+      - name: mlflow-experiment
+        value: wine-quality
 
   templates:
     - name: pipeline
       steps:
-        - - name: run
-            template: run-step
+        - - name: fetch-data
+            template: fetch-from-minio
+        - - name: eda
+            template: eda-step
+            arguments:
+              artifacts:
+                - name: dataset
+                  from: "{{steps.fetch-data.outputs.artifacts.dataset}}"
+        - - name: preprocess
+            template: preprocess-step
+            arguments:
+              artifacts:
+                - name: dataset
+                  from: "{{steps.fetch-data.outputs.artifacts.dataset}}"
+        - - name: train
+            template: train-step
+            arguments:
+              artifacts:
+                - name: preprocess_out
+                  from: "{{steps.preprocess.outputs.artifacts.preprocess_out}}"
+        - - name: evaluate
+            template: eval-step
+            arguments:
+              artifacts:
+                - name: preprocess_out
+                  from: "{{steps.preprocess.outputs.artifacts.preprocess_out}}"
+                - name: model_out
+                  from: "{{steps.train.outputs.artifacts.model_out}}"
 
-    - name: run-step
+    - name: fetch-from-minio
       container:
-        image: ghcr.io/<EUER_IMAGE>:<TAG>
-        command: ["python"]
+        image: ghcr.io/jbderleuchtturm/ml-wine-pipeline:0.2
+        command: ["bash", "-c"]
         args:
-          - train.py
-          - --bucket
-          - "{{workflow.parameters.bucket}}"
-          - --key
-          - "{{workflow.parameters.objectKey}}"
+          - |
+            set -euo pipefail
+            mkdir -p "$(dirname "{{workflow.parameters.local-data-path}}")"
+            python - << 'PY'
+            import os, boto3
+
+            bucket = os.environ["BUCKET"]
+            key    = os.environ["OBJECT_KEY"]
+            out    = os.environ["OUT_PATH"]
+
+            endpoint = os.environ.get("MLFLOW_S3_ENDPOINT_URL") or os.environ.get("AWS_ENDPOINT_URL")
+            if not endpoint:
+              raise SystemExit("Missing MLFLOW_S3_ENDPOINT_URL (or AWS_ENDPOINT_URL)")
+
+            s3 = boto3.client(
+                "s3",
+                endpoint_url=endpoint,
+                aws_access_key_id=os.environ.get("AWS_ACCESS_KEY_ID"),
+                aws_secret_access_key=os.environ.get("AWS_SECRET_ACCESS_KEY"),
+                region_name=os.environ.get("AWS_DEFAULT_REGION", "us-east-1"),
+            )
+            s3.download_file(bucket, key, out)
+            print(f"[OK] Downloaded s3://{bucket}/{key} -> {out}")
+            PY
         envFrom:
           - secretRef:
-              name: mlflow-s3
+              name: argo-artifacts-s3
+        env:
+          - name: BUCKET
+            value: "{{workflow.parameters.bucket}}"
+          - name: OBJECT_KEY
+            value: "{{workflow.parameters.objectKey}}"
+          - name: OUT_PATH
+            value: "{{workflow.parameters.local-data-path}}"
+      outputs:
+        artifacts:
+          - name: dataset
+            path: "{{workflow.parameters.local-data-path}}"
+
+    - name: eda-step
+      inputs:
+        artifacts:
+          - name: dataset
+            path: "{{workflow.parameters.local-data-path}}"
+      container:
+        image: ghcr.io/jbderleuchtturm/ml-wine-pipeline:0.2
+        command: ["bash", "-c"]
+        args:
+          - |
+            set -euo pipefail
+            python exploratory_data_analysis.py \
+              --data-path "{{workflow.parameters.local-data-path}}" \
+              --sep "{{workflow.parameters.csv-sep}}" \
+              --out-dir "{{workflow.parameters.eda-out-dir}}"
+        envFrom:
           - secretRef:
-              name: mlflow-runtime
+              name: argo-artifacts-s3
+      outputs:
+        artifacts:
+          - name: eda_out
+            path: "{{workflow.parameters.eda-out-dir}}"
+
+    - name: preprocess-step
+      inputs:
+        artifacts:
+          - name: dataset
+            path: "{{workflow.parameters.local-data-path}}"
+      container:
+        image: ghcr.io/jbderleuchtturm/ml-wine-pipeline:0.2
+        command: ["bash", "-c"]
+        args:
+          - |
+            set -euo pipefail
+            python preprocessing.py \
+              --data-path "{{workflow.parameters.local-data-path}}" \
+              --sep "{{workflow.parameters.csv-sep}}" \
+              --state-dir "{{workflow.parameters.state-dir}}" \
+              --reset-state \
+              --out-dir "{{workflow.parameters.preprocess-out-dir}}"
+        envFrom:
+          - secretRef:
+              name: argo-artifacts-s3
+      outputs:
+        artifacts:
+          - name: preprocess_out
+            path: "{{workflow.parameters.preprocess-out-dir}}"
+
+    - name: train-step
+      inputs:
+        artifacts:
+          - name: preprocess_out
+            path: "{{workflow.parameters.preprocess-out-dir}}"
+      container:
+        image: ghcr.io/jbderleuchtturm/ml-wine-pipeline:0.2
+        command: ["bash", "-c"]
+        args:
+          - |
+            set -euo pipefail
+            python train.py \
+              --preprocess-dir "{{workflow.parameters.preprocess-out-dir}}" \
+              --out-dir "{{workflow.parameters.model-out-dir}}" \
+              --experiment "{{workflow.parameters.mlflow-experiment}}"
+        envFrom:
+          - secretRef:
+              name: argo-artifacts-s3
+      outputs:
+        artifacts:
+          - name: model_out
+            path: "{{workflow.parameters.model-out-dir}}"
+
+    - name: eval-step
+      inputs:
+        artifacts:
+          - name: preprocess_out
+            path: "{{workflow.parameters.preprocess-out-dir}}"
+          - name: model_out
+            path: "{{workflow.parameters.model-out-dir}}"
+      container:
+        image: ghcr.io/jbderleuchtturm/ml-wine-pipeline:0.2
+        command: ["bash", "-c"]
+        args:
+          - |
+            set -euo pipefail
+            # Beispiel: eval auf logreg.joblib
+            python evaluation.py \
+              --preprocess-dir "{{workflow.parameters.preprocess-out-dir}}" \
+              --model-path "{{workflow.parameters.model-out-dir}}/logreg.joblib" \
+              --out-dir "{{workflow.parameters.eval-out-dir}}" \
+              --experiment "{{workflow.parameters.mlflow-experiment}}" \
+              --run-name "evaluation"
+        envFrom:
+          - secretRef:
+              name: argo-artifacts-s3
+      outputs:
+        artifacts:
+          - name: eval_out
+            path: "{{workflow.parameters.eval-out-dir}}"
